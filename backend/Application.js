@@ -2,6 +2,7 @@ import express from "express";
 import sequelize from "./config/database.js";
 import Usuario from "./models/Usuario.js";
 import usuariosRoutes from "./routes/usuariosRoutes.js"; 
+import recibosRoutes from "./routes/recibosRoutes.js";
 import url from "url";
 import path from "path";
 
@@ -15,6 +16,8 @@ app.use(express.static("public"));
 
 //Usamos la ruta Usuarios
 app.use("/api/usuarios", usuariosRoutes);
+// usamos la ruta recibos
+app.use("/api/recibos", recibosRoutes);
 
 app.use((req, res, next) => {
   res.setHeader(
