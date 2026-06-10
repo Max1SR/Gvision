@@ -1,6 +1,6 @@
 import { Sequelize } from "sequelize";
 
-const sequelize = new Sequelize("tu_base_de_datos", "root", "tu_contrasena", {
+const sequelize = new Sequelize("gvision", "root", "12345", {
   host: "localhost",
   dialect: "mysql", 
   logging: false, 

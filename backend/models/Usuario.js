@@ -30,14 +30,14 @@ const Usuario = sequelize.define(
     timestamps: true, 
 
     hooks: {
-      // Justo antes de crear el usuario en la BD, interceptamos la contraseña y la encriptamos
+      // interceptamos la contraseña y la encriptamos
       beforeCreate: async (usuario) => {
         if (usuario.password) {
           const salt = await bcrypt.genSalt(10);
           usuario.password = await bcrypt.hash(usuario.password, salt);
         }
       },
-      // Si el usuario actualiza su contraseña, también la volvemos a encriptar
+      // también la volvemos a encriptar
       beforeUpdate: async (usuario) => {
         if (usuario.changed("password")) {
           const salt = await bcrypt.genSalt(10);
@@ -48,7 +48,7 @@ const Usuario = sequelize.define(
   },
 );
 
-// Agregamos un método personalizado para comparar contraseñas al iniciar sesión
+// Comparar contraseñas al iniciar sesión
 Usuario.prototype.validarPassword = async function (passwordIngresada) {
   return await bcrypt.compare(passwordIngresada, this.password);
 };
