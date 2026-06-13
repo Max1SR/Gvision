@@ -22,9 +22,15 @@ const Recibo = sequelize.define("Recibo", {
     type: DataTypes.STRING,
     allowNull: true,
   },
+
+  url_imagen: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   fecha: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "Sin fecha",
   },
 });
 

@@ -20,6 +20,8 @@ app.use(express.static("public"));
 app.use("/api/usuarios", usuariosRoutes);
 // usamos la ruta recibos
 app.use("/api/recibos", recibosRoutes);
+// carpeta uploads accesible desde la URL del navegador (revisar)
+app.use("/uploads", express.static("uploads"));
 
 app.use((req, res, next) => {
   res.setHeader(

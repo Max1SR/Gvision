@@ -1,16 +1,37 @@
 import express from "express";
-import multer from "multer";
-import { GoogleGenAI } from "@google/genai"; 
+import multer from "multer"; // el cadenero (middleware)
+import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
 import verificarToken from "../middleware/auth.js";
+
+import path from "path"; // pa manejar extensiones
+import fs from "fs"; // pa crear carpetas
 
 import Recibo from "../models/Recibo.js";
 import ItemRecibo from "../models/ItemRecibo.js";
 
 const router = express.Router();
 
+//verificamos si al carpeta uploads existe
+const carpetaUploads = "./uploads";
+if (!fs.existsSync(carpetaUploads)) {
+  fs.mkdirSync(carpetaUploads);
+}
+
+const almacenamientoDisco = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    // CReamos un nombre unico: recibo_TIMESTAMP_ALEATORIO.extensión
+    const sufijoUnico = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const extension = path.extname(file.originalname);
+    cb(null, `recibo-${sufijoUnico}${extension}`);
+  },
+});
+
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: almacenamientoDisco,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const formatosPermitidos = ["image/png", "image/jpeg", "image/jpg"];
@@ -22,9 +43,8 @@ const upload = multer({
   },
 });
 
-
 const ai = new GoogleGenAI({
-  apiKey: "aqui va la api",
+  apiKey: "aquivalaapipipipipi",
 });
 
 router.post(
@@ -38,10 +58,12 @@ router.post(
       }
 
       console.log("Iniciando análisis de imagen con el nuevo @google/genai...");
+      console.log(`Imagen guardada físicamente en: ${req.file.path}`);
 
+      const datosImagenBytes = fs.readFileSync(req.file.path);
       const imagePart = {
         inlineData: {
-          data: req.file.buffer.toString("base64"),
+          data: datosImagenBytes.toString("base64"),
           mimeType: req.file.mimetype,
         },
       };
@@ -75,14 +97,14 @@ router.post(
           );
 
           response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", 
+            model: "gemini-2.5-flash",
             contents: [prompt, imagePart],
             config: {
               responseMimeType: "application/json",
             },
           });
 
-          exito = true; 
+          exito = true;
         } catch (apiError) {
           if (apiError.status === 503 || apiError.message.includes("503")) {
             console.log(
@@ -119,37 +141,68 @@ router.post(
         });
       }
 
-      console.log(`Verificando duplicados para el usuario: ${req.usuario.id}`);
+     console.log(`Verificando duplicados para el usuario: ${req.usuario.id}`);
 
-      const resumenProductos = datosEstructurados.items
-        .map((item) => item.descripcion)
-        .join("");
+     // estandarizacion de productos
+     const resumenProductos = datosEstructurados.items
+       .map((item) => {
+         return item.descripcion
+           .toLowerCase() // a minúsculas
+           .normalize("NFD")
+           .replace(/[\u0300-\u036f]/g, "") // sin acentos 
+           .replace(/[^a-z0-9]/g, ""); // Borramos espacios comas y caracteres especiales
+       })
+       .sort() // ordenamos alfabeticamente pro si gemini modifica el orden
+       .join("");
 
-      // hash blindado, comercio + fecha + total + productos comprados, para garantizar que no se dupliquen datos
-      const textoBase = `${datosEstructurados.comercio}_${datosEstructurados.fecha}_${datosEstructurados.total}_${resumenProductos}`;
+     // estandarizacion de comercio y total
+     const comercioNorm = datosEstructurados.comercio
+       .toLowerCase()
+       .replace(/[^a-z0-9]/g, "");
+     const fechaNorm = datosEstructurados.fecha.trim();
+     const totalNorm = Number(datosEstructurados.total).toFixed(2);
 
-      const firmaDigital = crypto
-        .createHash("sha256")
-        .update(textoBase)
-        .digest("hex");
+     // hash
+     const textoBase = `${comercioNorm}_${fechaNorm}_${totalNorm}_${resumenProductos}`;
 
-      const reciboDuplicado = await Recibo.findOne({
-        where: { firma_digital: firmaDigital, UsuarioId: req.usuario.id },
-      });
+     console.log("Texto base estandarizado para Hash:", textoBase);
 
-      if (reciboDuplicado) {
-        console.log("¡Recibo duplicado detectado!");
-        return res.status(200).json({
-          mensaje: "Este recibo ya había sido registrado anteriormente.",
-          datos: datosEstructurados, 
-        });
-      }
+     const firmaDigital = crypto
+       .createHash("sha256")
+       .update(textoBase)
+       .digest("hex");
 
+     const reciboDuplicado = await Recibo.findOne({
+       where: { firma_digital: firmaDigital, UsuarioId: req.usuario.id },
+     });
+
+     // SI EL TICKET ES UN DUPLICADO
+     if (reciboDuplicado) {
+       console.log(
+         "¡Recibo duplicado detectado! Eliminando archivo físico sobrante.",
+       );
+
+       // Verificamos que el archivo realmente exista antes de intentar borrarlo para evitar crasheos
+       if (req.file && fs.existsSync(req.file.path)) {
+         fs.unlinkSync(req.file.path);
+       }
+
+       return res.status(200).json({
+         mensaje: "Este recibo ya había sido registrado anteriormente.",
+         datos: datosEstructurados,
+       });
+     }
+
+      const rutaPublicaImagen = `/uploads/${req.file.filename}`;
+
+      //guardar en bd con modelo Recibo
       const nuevoRecibo = await Recibo.create({
         comercio: datosEstructurados.comercio,
         total: datosEstructurados.total,
+        fecha: datosEstructurados.fecha,
+        url_imagen: rutaPublicaImagen,
         UsuarioId: req.usuario.id,
-        firma_digital: firmaDigital, 
+        firma_digital: firmaDigital,
       });
 
       const itemsConParentesco = datosEstructurados.items.map((item) => ({
@@ -174,6 +227,12 @@ router.post(
       ) {
         return res.status(400).json({ error: error.message });
       }
+
+      //eliminar cualquier basura (imagen) si el proceso se interrumpe por algun error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
       res.status(500).json({
         error:
           "Error interno al analizar la imagen con Inteligencia Artificial.",
