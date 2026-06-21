@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import * as XLSX from "xlsx";
 
-const RecibosScreen = () => {
+const RecibosScreen = ({ alVerDashboard, esInvitado, onLogout }) => {
   const [archivo, setArchivo] = useState(null);
   const [vistaPrevia, setVistaPrevia] = useState(null);
   const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
@@ -79,13 +79,18 @@ const RecibosScreen = () => {
         },
       );
 
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        onLogout(); // Expulsamos al usuario a la pantalla de login
+        return;
+      }
+
       const data = await respuesta.json();
       if (!respuesta.ok)
         throw new Error(data.error || "Ocurrió un error en el servidor");
 
       setMensaje({ texto: "¡Análisis exitoso!", tipo: "exito" });
 
-      // 3. Guardamos los datos reales en nuestro estado para que la tabla reaccione
+      // Guardamos los datos reales en nuestro estado para que la tabla reaccione
       setDatosEstructurados(data.datos);
       setCargando(false);
     } catch (error) {
@@ -105,7 +110,7 @@ const RecibosScreen = () => {
       "Subtotal ($)": item.cantidad * item.precio,
     }));
 
-    // Añadimos una fila extra al final para el Total general en el Excel
+    // agregamos una fila extra al final para el total general en el Excel
     datosLimpios.push({
       Cantidad: "",
       "Descripción del Producto": "TOTAL",
@@ -113,19 +118,19 @@ const RecibosScreen = () => {
       "Subtotal ($)": datosEstructurados.total,
     });
 
-    // 2. Pasamos la masa por el molde (Convertimos el JSON a una hoja de datos)
+    // Convertimos el JSON a una hoja de datos
     const hoja = XLSX.utils.json_to_sheet(datosLimpios);
 
-    // 3. Creamos el libro de trabajo vacío (La caja de empaque)
+    // creamos el libro de trabajo 
     const libro = XLSX.utils.book_new();
 
-    // 4. Metemos la hoja dentro del libro asignándole un nombre a la pestaña
+    // metemos la hoja dentro del libro
     XLSX.utils.book_append_sheet(libro, hoja, "Detalle de Recibo");
 
-    // Generamos un nombre de archivo dinámico usando el nombre del comercio
+    // nombre para el archivo
     const nombreArchivo = `Recibo_${datosEstructurados.comercio.replace(/\s+/g, "_")}.xlsx`;
 
-    // 5. Descarga automática del archivo en el navegador
+    //descarga automatica
     XLSX.writeFile(libro, nombreArchivo);
   };
 

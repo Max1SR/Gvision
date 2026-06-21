@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const AuthScreen = () => {
+const AuthScreen = ({ onLoginSuccess }) => {
   // estados para guardar lo que el usuario escribe
   const [esRegistro, setEsRegistro] = useState(false);
   const [correo, setCorreo] = useState("");
@@ -35,8 +35,8 @@ const AuthScreen = () => {
           texto: "¡Cuenta creada con éxito! Ahora inicia sesión.",
           tipo: "exito",
         });
-        setEsRegistro(false); 
-        setPassword(""); 
+        setEsRegistro(false);
+        setPassword("");
       } else {
         // guardando el token en su navegador
         localStorage.setItem("token", data.token);
@@ -46,8 +46,8 @@ const AuthScreen = () => {
           tipo: "exito",
         });
 
-        // Aquí luego programaremos el cambio a la pantalla principal
-        console.log("Token guardado:", data.token);
+        // funcion para permitir cambio a la pantalla principal
+        onLoginSuccess();
       }
     } catch (error) {
       setMensaje({ texto: error.message, tipo: "error" });
@@ -62,13 +62,12 @@ const AuthScreen = () => {
       texto: "Entrando en modo invitado. No se guardará el historial.",
       tipo: "info",
     });
-    console.log("Modo invitado activado");
+    console.log("Modo invitado");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-slate-100">
-        {/* Títulos */}
         <div>
           <h2 className="text-center text-3xl font-extrabold text-slate-900">
             {esRegistro ? "Crea tu cuenta" : "Bienvenido de vuelta"}
@@ -87,7 +86,7 @@ const AuthScreen = () => {
           </p>
         </div>
 
-        {/* Alertas de error o éxito */}
+        {/* Alertas de error o exito */}
         {mensaje.texto && (
           <div
             className={`p-4 rounded-lg text-sm text-center font-medium ${
@@ -155,7 +154,7 @@ const AuthScreen = () => {
             </div>
           </div>
 
-          {/* Botón de Invitado */}
+          {/* Boton Invitado */}
           <div className="mt-6">
             <button
               onClick={handleInvitado}
