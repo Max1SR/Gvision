@@ -15,14 +15,14 @@ const verificarToken = (req, res, next) => {
     return next(); 
   }
 
-  // Si hay token, verificamos que no sea falso o esté caducado
+  // Si hay token, verificamos que no sea falso o caducado
   try {
     const decodificado = jwt.verify(token, "MI_CLAVE_SECRETA_SUPER_SEGURA_SISISI_123");
     req.usuario = decodificado; 
     req.esInvitado = false;
     next(); 
   } catch (error) {
-    //Si el token es inválido o caducó: 
+    //Si el token es involido o caduco
     return res
       .status(403)
       .json({ error: "Tu sesión ha expirado o el token es inválido." });

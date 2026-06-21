@@ -7,6 +7,7 @@ import {
 import * as XLSX from "xlsx";
 
 const RecibosScreen = ({ alVerDashboard, esInvitado, onLogout }) => {
+  //estados base
   const [archivo, setArchivo] = useState(null);
   const [vistaPrevia, setVistaPrevia] = useState(null);
   const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
@@ -51,7 +52,7 @@ const RecibosScreen = ({ alVerDashboard, esInvitado, onLogout }) => {
 
     setArchivo(file);
     setVistaPrevia(URL.createObjectURL(file));
-    setDatosEstructurados(null); // Limpiamos la tabla anterior si sube una foto nueva
+    setDatosEstructurados(null); // Limpiamos la tabla anterior si se sube una foto nueva
   };
 
   const handleProcesar = async () => {

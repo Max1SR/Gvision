@@ -60,13 +60,13 @@ router.post('/login', async (req, res) => {
     // buscar usuario en la base de datos
     const usuario = await Usuario.findOne({ where: { correo: correo } });
     if (!usuario) {
-      return res.status(401).json({ error: 'Credenciales incorrectas.' });
+      return res.status(401).json({ error: 'Usuario no ecnotrado' });
     }
 
     // Verificamos que la contraseña coincida
     const passwordValida = await usuario.validarPassword(password);
     if (!passwordValida) {
-      return res.status(401).json({ error: 'Credenciales incorrectas.' });
+      return res.status(401).json({ error: 'Contraseña incorrecta.' });
     }
 
 
