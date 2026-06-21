@@ -12,7 +12,7 @@ const Aplicacion = () => {
   const [esInvitado, setEsInvitado] = useState(false);
   const [mensajeExpirado, setMensajeExpirado] = useState("");
 
-  // Se ejecuta al cargar la página por primera vez
+  // verificamos sesion al cargar pagina por primera vez
   useEffect(() => {
     verificarSesion();
   }, []);
@@ -30,12 +30,14 @@ const Aplicacion = () => {
     }
   };
 
-  // entrar al sistema
+  // verificar entrada al sistema
   const handleLoginSuccess = () => {
     setMensajeExpirado(""); 
     verificarSesion(); 
   };
 
+
+// manjamos el estado de salida de la session
   const handleLogout = (porExpiracion = false) => {
     localStorage.removeItem("token");
     localStorage.removeItem("esInvitado");
@@ -81,12 +83,14 @@ const Aplicacion = () => {
             >
               Área de Carga
             </button>
-            <button
-              onClick={() => setVistaActual("dashboard")}
-              className={`font-semibold transition-colors ${vistaActual === "dashboard" ? "text-blue-400" : "text-slate-400 hover:text-white"}`}
-            >
-              Mi Dashboard
-            </button>
+            {!esInvitado && (
+              <button
+                onClick={() => setVistaActual("dashboard")}
+                className={`font-semibold transition-colors ${vistaActual === "dashboard" ? "text-blue-400" : "text-slate-400 hover:text-white"}`}
+              >
+                Mi Dashboard
+              </button>
+            )}
           </div>
         )}
 

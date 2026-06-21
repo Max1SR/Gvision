@@ -265,4 +265,79 @@ router.get("/historial", verificarToken, async (req, res) => {
   }
 });
 
+
+router.delete("/:id", verificarToken, async (req, res) => {
+  if (req.esInvitado)
+    return res.status(403).json({ error: "Invitados no pueden eliminar" });
+
+  try {
+    const reciboId = req.params.id;
+
+    const recibo = await Recibo.findOne({
+      where: { id: reciboId, UsuarioId: req.usuario.id },
+    });
+
+    if (!recibo) {
+      return res
+        .status(404)
+        .json({ error: "Recibo no encontrado o no autorizado." });
+    }
+
+    if (recibo.url_imagen) {
+      const rutaFisica = path.join(process.cwd(), recibo.url_imagen);
+      if (fs.existsSync(rutaFisica)) {
+        fs.unlinkSync(rutaFisica);
+        console.log(`Imagen física eliminada: ${rutaFisica}`);
+      }
+    }
+
+   
+    await recibo.destroy();
+
+    res
+      .status(200)
+      .json({ mensaje: "Recibo y foto eliminados correctamente." });
+  } catch (error) {
+    console.error("Error al eliminar recibo:", error);
+    res.status(500).json({ error: "Error interno al intentar eliminar." });
+  }
+});
+
+
+router.put("/:id", verificarToken, async (req, res) => {
+  if (req.esInvitado)
+    return res.status(403).json({ error: "Invitados no pueden editar" });
+
+  try {
+    const reciboId = req.params.id;
+    const { comercio, fecha, total } = req.body; // Los datos corregidos que manda el frontend
+
+    // 1. Buscamos el recibo del usuario
+    const recibo = await Recibo.findOne({
+      where: { id: reciboId, UsuarioId: req.usuario.id },
+    });
+
+    if (!recibo) {
+      return res
+        .status(404)
+        .json({ error: "Recibo no encontrado o no autorizado." });
+    }
+
+    // 2. Aplicamos el "corrector líquido" actualizando los valores
+    recibo.comercio = comercio || recibo.comercio;
+    recibo.fecha = fecha || recibo.fecha;
+    recibo.total = total || recibo.total;
+
+    // 3. Guardamos los cambios en MySQL
+    await recibo.save();
+
+    res
+      .status(200)
+      .json({ mensaje: "Recibo actualizado correctamente.", recibo });
+  } catch (error) {
+    console.error("Error al actualizar recibo:", error);
+    res.status(500).json({ error: "Error interno al intentar actualizar." });
+  }
+});
+
 export default router;

@@ -12,7 +12,7 @@ const AuthScreen = ({ onLoginSuccess }) => {
     e.preventDefault();
     setMensaje({ texto: "Procesando...", tipo: "info" });
 
-    // Elegimos a qué puerta tocar dependiendo si es nuevo o ya tiene cuenta
+    // Elegimos a que puerta tocar dependiendo si es nuevo o ya tiene cuenta
     const endpoint = esRegistro
       ? "/api/usuarios/registro"
       : "/api/usuarios/login";
@@ -38,7 +38,7 @@ const AuthScreen = ({ onLoginSuccess }) => {
         setEsRegistro(false);
         setPassword("");
       } else {
-        // guardando el token en su navegador
+        // guardando el token en el navegador
         localStorage.setItem("token", data.token);
         localStorage.removeItem("esInvitado");
         setMensaje({
@@ -56,13 +56,12 @@ const AuthScreen = ({ onLoginSuccess }) => {
 
   // pasar sin registrarse
   const handleInvitado = () => {
-    localStorage.removeItem("token");
     localStorage.setItem("esInvitado", "true");
-    setMensaje({
-      texto: "Entrando en modo invitado. No se guardará el historial.",
-      tipo: "info",
-    });
-    console.log("Modo invitado");
+    localStorage.removeItem("token");
+
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    }
   };
 
   return (
