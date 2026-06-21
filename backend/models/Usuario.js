@@ -14,10 +14,11 @@ const Usuario = sequelize.define(
     correo: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true, 
-      validate: {
-        isEmail: true, 
-      },
+      unique: true,
+      // validate: {
+      //   isEmail: true,
+      //   notEmpty: true,
+      // },
     },
     password: {
       type: DataTypes.STRING,
@@ -27,8 +28,9 @@ const Usuario = sequelize.define(
   {
     // Las reglas de negocio de la tabla
     tableName: "usuarios",
-    timestamps: true, 
+    timestamps: true,
 
+    //hook pa encriptar
     hooks: {
       // interceptamos la contraseña y la encriptamos
       beforeCreate: async (usuario) => {

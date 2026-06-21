@@ -12,7 +12,7 @@ const AuthScreen = ({ onLoginSuccess }) => {
     e.preventDefault();
     setMensaje({ texto: "Procesando...", tipo: "info" });
 
-    // Elegimos a qué puerta tocar dependiendo si es nuevo o ya tiene cuenta
+    // Elegimos a que puerta tocar dependiendo si es nuevo o ya tiene cuenta
     const endpoint = esRegistro
       ? "/api/usuarios/registro"
       : "/api/usuarios/login";
@@ -38,11 +38,11 @@ const AuthScreen = ({ onLoginSuccess }) => {
         setEsRegistro(false);
         setPassword("");
       } else {
-        // guardando el token en su navegador
+        // guardando el token en el navegador
         localStorage.setItem("token", data.token);
         localStorage.removeItem("esInvitado");
         setMensaje({
-          texto: "¡Bienvenido! Entrando al sistema...",
+          texto: "Bienvenido! Entrando al sistema...",
           tipo: "exito",
         });
 
@@ -56,13 +56,12 @@ const AuthScreen = ({ onLoginSuccess }) => {
 
   // pasar sin registrarse
   const handleInvitado = () => {
-    localStorage.removeItem("token");
     localStorage.setItem("esInvitado", "true");
-    setMensaje({
-      texto: "Entrando en modo invitado. No se guardará el historial.",
-      tipo: "info",
-    });
-    console.log("Modo invitado");
+    localStorage.removeItem("token");
+
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    }
   };
 
   return (
@@ -109,7 +108,7 @@ const AuthScreen = ({ onLoginSuccess }) => {
                 Correo Electrónico
               </label>
               <input
-                type="email"
+                type="text"
                 required
                 className="appearance-none relative block w-full px-4 py-3 border border-slate-300 rounded-lg placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow sm:text-sm"
                 placeholder="ejemplo@correo.com"

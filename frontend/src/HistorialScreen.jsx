@@ -14,6 +14,78 @@ const HistorialScreen = ({ alCambiarVista }) => {
   // ESTADOS PARA LA PAGINACION
   const [paginaActual, setPaginaActual] = useState(1);
   const ticketsPorPagina = 9; // limite por pagina
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [datosEditados, setDatosEditados] = useState({
+    comercio: "",
+    fecha: "",
+    total: "",
+  });
+
+  // pa eliminar (crud)
+  const handleEliminar = async (id) => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas eliminar este recibo permanentemente? Esta acción destruirá la foto original.",
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const respuesta = await fetch(`http://localhost:8080/api/recibos/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (respuesta.ok) {
+        setHistorial(historial.filter((r) => r.id !== id));
+        setReciboSeleccionado(null); 
+      }
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+    }
+  };
+
+  // pa editar (crud)
+  const activarEdicion = () => {
+    setDatosEditados({
+      comercio: reciboSeleccionado.comercio,
+      fecha: reciboSeleccionado.fecha,
+      total: reciboSeleccionado.total,
+    });
+    setModoEdicion(true);
+  };
+
+  //pa guardar cambios al editar (crud)
+  const handleGuardarEdicion = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const respuesta = await fetch(
+        `http://localhost:8080/api/recibos/${reciboSeleccionado.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(datosEditados),
+        },
+      );
+
+      if (respuesta.ok) {
+        const data = await respuesta.json();
+        setReciboSeleccionado({ ...reciboSeleccionado, ...datosEditados });
+        const nuevoHistorial = historial.map((r) =>
+          r.id === reciboSeleccionado.id ? { ...r, ...datosEditados } : r,
+        );
+        setHistorial(nuevoHistorial);
+
+        setModoEdicion(false);
+      }
+    } catch (error) {
+      console.error("Error al editar:", error);
+    }
+  };
 
   useEffect(() => {
     const obtenerHistorial = async () => {
@@ -97,21 +169,101 @@ const HistorialScreen = ({ alCambiarVista }) => {
             ← Volver a la Lista
           </button>
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="bg-slate-900 px-8 py-6 flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  Ticket de {reciboSeleccionado.comercio}
-                </h1>
-                <p className="text-slate-400 mt-1">
-                  {reciboSeleccionado.fecha}
-                </p>
+            <div className="bg-slate-900 px-8 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex-1">
+                {modoEdicion ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={datosEditados.comercio}
+                      onChange={(e) =>
+                        setDatosEditados({
+                          ...datosEditados,
+                          comercio: e.target.value,
+                        })
+                      }
+                      className="bg-slate-800 text-white border-slate-700 rounded px-3 py-1 font-bold text-xl w-full"
+                    />
+                    <div className="flex gap-4">
+                      <input
+                        type="text"
+                        value={datosEditados.fecha}
+                        onChange={(e) =>
+                          setDatosEditados({
+                            ...datosEditados,
+                            fecha: e.target.value,
+                          })
+                        }
+                        className="bg-slate-800 text-slate-300 border-slate-700 rounded px-2 py-1 text-sm"
+                      />
+                      <div className="flex items-center text-white">
+                        <span className="mr-1">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={datosEditados.total}
+                          onChange={(e) =>
+                            setDatosEditados({
+                              ...datosEditados,
+                              total: e.target.value,
+                            })
+                          }
+                          className="bg-slate-800 text-white border-slate-700 rounded px-2 py-1 text-sm w-24"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="text-2xl font-bold text-white">
+                      Ticket de {reciboSeleccionado.comercio}
+                    </h1>
+                    <p className="text-slate-400 mt-1">
+                      Fecha de compra: {reciboSeleccionado.fecha}
+                    </p>
+                  </>
+                )}
               </div>
-              <button
-                onClick={handleExportarExcel}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow text-sm"
-              >
-                Descargar Excel
-              </button>
+
+              <div className="flex flex-wrap gap-2">
+                {modoEdicion ? (
+                  <>
+                    <button
+                      onClick={() => setModoEdicion(false)}
+                      className="bg-slate-700 hover:bg-slate-600 text-white py-2 px-3 rounded-lg text-sm transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleGuardarEdicion}
+                      className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg text-sm shadow transition-colors"
+                    >
+                      Guardar Cambios
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={activarEdicion}
+                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-3 rounded-lg text-sm shadow transition-colors"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(reciboSeleccionado.id)}
+                      className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-lg text-sm shadow transition-colors"
+                    >
+                      Borrar
+                    </button>
+                    <button
+                      onClick={handleExportarExcel}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-sm shadow transition-colors"
+                    >
+                      ↓ Excel
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-1 bg-slate-100 rounded-xl flex items-center justify-center min-h-[300px] overflow-hidden p-2 border border-slate-200">
