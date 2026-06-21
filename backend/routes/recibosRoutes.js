@@ -44,7 +44,7 @@ const upload = multer({
 });
 
 const ai = new GoogleGenAI({
-  apiKey: "aquivalaapipipipipi",
+  apiKey: "apipipipipi",
 });
 
 router.post(
